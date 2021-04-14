@@ -1,0 +1,155 @@
+// Switch to SampleCollections database
+// use("SampleCollections");
+
+// 1) Rechercher tous les films dont la description comprend "documentary" et de catégorie "horror"
+db.Sakila_films.find({
+    Description: /documentary/i,
+    Category: /horror/i
+});
+
+// 2) Donner le nombre de films en rating "G"
+db.Sakila_films.count({
+    Rating: "G"
+});
+db.Sakila_films.find({
+    Rating: {$in: ["G", "g"]}
+}).count();
+
+// 3) Rechercher tous les films de 2013 ou 2012 dont la durée est entre 60 et 150 minutes
+db.video_movieDetails.find({
+    year: {$gte: 2012, $lte: 2013},
+    runtime: {$gte: 60, $lte: 150}
+});
+
+db.video_movieDetails.find({
+    $and: [
+        {$or: [{year: 2012}, {year: 2013}]}
+        {$and: [ {runtime: {$gte: 60}}, {runtime: {$lte: 150}} ] }
+    ]
+});
+// <==>
+db.video_movieDetails.find({
+    $or: [{year: 2012}, {year: 2013}],
+    runtime: {$gte: 60, $lte: 150}
+});
+
+db.video_movieDetails.find({
+    year: {$in: [2012, 2013]},
+    runtime: {$gte: 60, $lte: 150}
+});
+
+// 4) Rechercher tous les films qui ont une image certified sur tomato
+db.video_movieDetails.find({
+    "tomato.image": "certified"
+})
+
+// 5) Rechercher tous les films avec l’acteur ED CHASE
+db.Sakila_films.find({
+    Actors: {
+        $elemMatch: {
+            "First name": "ED",
+            "Last name": "CHASE"
+        }
+    },
+});
+
+// 6) Afficher tous les rated (“PG”, “PG-13”, ...) et le nombre de films pour chacun
+db.Sakila_films.aggregate([
+    { $group: {_id: "$Rating", count: {$sum: 1}} },
+]);
+
+
+
+
+// -----------------------------
+db.Sakila_films.insert({...})
+
+db.Sakila_films.aggregate([
+    { $match: {Rating: "PG"} },
+    { $group: {_id: "$Rating", count: {$sum: 1}, movies: {$addToSet: {
+        Title: "$Title",
+        Length: "$Length"
+        }}} },
+    { $out: "Sakila_films_by_rating"}
+]);
+
+db.Sakila_films_by_rating.find({_id: "PG"});
+
+db.Sakila_films_by_rating.aggregate([
+    {$unwind: "$movies"},
+]);
+
+db.Sakila_films.aggregate([
+    { $group: {_id: "$Rating", count: {$sum: 1}} },
+    { $count: "foo"}
+]);
+
+db.Sakila_films.count();
+
+
+db.Sakila_films.aggregate([
+    { $match: { Rating: {$in: ["G", "g"]}}},
+    {$count: "sum_rating_G"}
+]);
+
+db.DBEnvyLoad_orders.find();
+
+db.DBEnvyLoad_orders.aggregate([
+    {$unwind: "$lineItems"},
+]);
+
+db.DBEnvyLoad_orders.aggregate([
+    {$unwind: "$lineItems"},
+    {$group: {
+        _id: "$lineItems.prodId", 
+        avg_ordered: {$avg: "$lineItems.prodCount"}, 
+        orders: {
+            $addToSet: {
+                order_id: "$_id",
+                order_invoiceDate: "$invoiceDate",
+                cust_id: "$CustId"
+            }
+        }
+    }}
+])
+
+// La liste des produits avec la moyenne de nombre par commandes (globale)
+// dont les produits ont été commandé au moins une fois par custId: 64557
+db.DBEnvyLoad_orders.aggregate([
+    {$unwind: "$lineItems"},
+    {$group: {
+        _id: "$lineItems.prodId", 
+        avg_ordered: {$avg: "$lineItems.prodCount"}, 
+        orders: {
+            $addToSet: {
+                order_id: "$_id",
+                order_invoiceDate: "$invoiceDate",
+                cust_id: "$CustId"
+            }
+        }
+    }},
+    {$sort: {_id: 1} },
+    {$project: {avg_ordered: 1, "orders.cust_id": 1}},
+    {$match: {"orders.cust_id": 64557}},
+]);
+
+// La liste des produits avec la moyenne de nombre par commandes
+// (du custId: 64557)
+db.DBEnvyLoad_orders.aggregate([
+    {$match: {"CustId": 64557}},
+    {$unwind: "$lineItems"},
+    {$group: {
+        _id: "$lineItems.prodId", 
+        avg_ordered: {$avg: "$lineItems.prodCount"}, 
+        orders: {
+            $addToSet: {
+                order_id: "$_id",
+                order_invoiceDate: "$invoiceDate",
+                cust_id: "$CustId"
+            }
+        }
+    }},
+    {$sort: {_id: 1} },
+    {$project: {prodId: "$_id", avg_ordered: 1, "orders.cust_id": 1}}
+])
+

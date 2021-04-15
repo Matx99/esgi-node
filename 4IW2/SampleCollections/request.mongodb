@@ -1,11 +1,173 @@
 // MongoDB Playground
 // To disable this template go to Settings | MongoDB | Use Default Template For Playground.
-// Make sure you are connected to enable completions and to be able to run a playground.
-// Use Ctrl+Space inside a snippet or a string literal to trigger completions.
+//  mongodb://root:password@localhost:27017/SampleCollections?authSource=admin
 
-// Select the database to use.
-use('SampleCollections');
+// Rechercher tous les films dont la description comprend "documentary" et de catégorie "horror"
+db.Sakila_films.find({
+    Description: /documentary/i,
+    Category: /horror/i
+});
 
-// The drop() command destroys all data from a collection.
-// Make sure you run it against the correct database and collection.
-db.Sakila_films.find().limit(2);
+// Donner le nombre de films en rating "G"
+db.Sakila_films.find({
+    "Rating":"G"
+}).count();
+db.Sakila_films.count({
+    Rating: 'G'
+});
+
+// Rechercher tous les films de 2013 ou 2012 dont la durée est entre 60 et 150 minutes
+db.video_movieDetails.find({
+    $or: [ {year: 2012}, {year: 2013} ],
+    runtime: {$gte: 60, $lte: 150}
+});
+db.video_movieDetails.find({
+    year: {$in: [2012, 2013]},
+    runtime: {$gte: 60, $lte: 150}
+});
+
+// Rechercher tous les films qui ont une image certified sur tomato
+db.video_movieDetails.find({
+    'tomato.image': 'certified'
+});
+
+// Rechercher tous les films avec l’acteur ED CHASE
+//  "_id": 401,
+db.Sakila_films.find({
+    "Actors": {
+        "$elemMatch": {
+            "First name": /ed/i,
+            "Last name": /chase/i
+        }
+    }
+});
+
+// Afficher tous les rated ("PG", "PG-13", ...) et le nombre de films pour chacun
+db.Sakila_films.aggregate([
+     { $group: { 
+         _id: '$Rating', 
+         count: {$sum: 1} 
+     } }
+]);
+db.DBEnvyLoad_orders.find();
+
+db.DBEnvyLoad_orders.aggregate([
+    {$unwind: "$lineItems"},
+]);
+
+db.DBEnvyLoad_orders.aggregate([
+    {$unwind: "$lineItems"},
+    {$group: {
+        _id: {productId: "$lineItems.prodId", orderStatus: "$orderStatus"}, 
+        amounts: {$avg: "$lineItems.prodCount" }
+    }},
+    {$sort: {"_id.productId": 1}}
+])
+
+
+db.Sakila_films.find()
+db.Sakila_films.aggregate([
+    {$unwind: '$Actors'}
+])
+
+
+// AGGREGATE - EXO 1 ) 
+db.video_movieDetails.find();
+db.video_movieDetails.aggregate([
+        { $match: { "imdb.rating": { $gte: 8 } } },
+    { $sort: {year: -1} },
+    { $unwind: "$actors"}
+]);
+
+const aggregation = [
+    { $match: { "imdb.rating": { $gte: 8 } }},
+    { $sort: {released: -1}},
+    { $unwind: "$actors"}, //partage mon document en 4 document avec un acteur a chaque fois
+    { $group: {
+            _id: {actor: '$actors', type: "$type", rated: '$rated'},
+            avg_note: {$avg: '$imdb.rating'},
+            movies: {
+                $addToSet: {
+                    title: '$title',
+                    note: '$imdb.rating'
+                }
+            },
+    }},
+    { $group: {
+            _id: {actor: '$_id.actor', type: "$_id.type"},
+            avg_type_note: {$avg: "$avg_note"},
+            ratings: {$addToSet: {
+                rated: "$_id.rated",
+                avg_note: "$avg_note",
+                movies: "$movies"
+            }}
+    }},
+    { $group: {
+        _id: '$_id.actor',
+        avg_note: {$avg: "$avg_type_note"},
+            types: {$addToSet: {
+                type: "$_id.type",
+                avg_type_note: "$avg_type_note",
+                ratings: "$ratings"
+            }}
+    }},
+];
+db.video_movieDetails.aggregate(aggregation);
+
+
+// AGGREGATE - EXO 2 ) 
+db.video_movieDetails.aggregate([
+    {$unwind: "$genres"},
+    {$group: {
+        _id: {genre: "$genres", rated: "$rated"},
+        pire: {
+            $min: {
+                rated: "$imdb.rating",
+                title: "$title"
+            }
+        },
+        meilleur: {
+            $max: {
+                rated: "$imdb.rating",
+                title: "$title"
+            }
+        }
+    }},
+    {$group: {
+        _id: "$_id.genre",
+        ratings: {$addToSet: {
+            rated: "$_id.rated",
+            pire: "$pire",
+            meilleur: "$meilleur"
+        }}
+    }}
+]);
+
+db.video_movieDetails.aggregate([
+    {$sort: {"imdb.rating": 1}},
+    {$unwind: "$genres"},
+    {$group: {
+        "_id": {rated: "$rated", genre: "$genres"},
+        bestMovieTitle: {$last: '$title'},
+        bestMovieNote: {$last: '$imdb.rating'},
+        worstMovieTitle: {$first: '$title'},
+        worstMovieNote: {$first: '$imdb.rating'},
+    }},
+    {$group: {
+        "_id": "$_id.genre",
+        ratings: {
+            $addToSet: {
+                rating: "$_id.rated",
+                bestMovie: {
+                    title: "$bestMovieTitle",
+                    note: "$bestMovieNote",
+                },
+                worstMovie: {
+                    title: "$worstMovieTitle",
+                    note: "$worstMovieNote",
+                }
+            }
+        }
+    }},
+    {$sort: {_id: 1}}
+]);

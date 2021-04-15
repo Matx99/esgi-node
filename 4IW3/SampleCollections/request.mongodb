@@ -153,3 +153,93 @@ db.DBEnvyLoad_orders.aggregate([
     {$project: {prodId: "$_id", avg_ordered: 1, "orders.cust_id": 1}}
 ])
 
+
+// AGGREGATE - EXO 1)
+db.video_movieDetails.aggregate([
+    {$match: {"imdb.rating": {$gte: 8}}},
+    {$sort: {year: 1}},
+    {$unwind: "$actors"},
+    {$group: {
+        _id: {actor: "$actors", rated: "$rated"},
+        avg_rating_note: {$avg: "$imdb.rating"},
+        movies: {
+            $addToSet: {
+                title: "$title",
+                note: "$imdb.rating"
+            }
+        }
+    }},
+    {$group: {
+        _id: "$_id.actor",
+        ratings: {
+            $addToSet: {
+                rated: "$_id.rated",
+                avg_rating_note: "$avg_rating_note",
+                movies: "$movies"
+            }
+        }
+    }},
+    {$match: {"_id": "Aamir Khan"}}
+])
+
+// AGGREGATE - EXO 2)
+db.video_movieDetails.aggregate([
+    {$match: {"rated": {$ne: null}}},
+    {$unwind: "$genres"},
+    {$group: {
+        _id: {genre: "$genres", rated: "$rated"},
+        min_rating_note: {$min: {
+            rating: "$imdb.rating",
+            title: "$title"
+        }},
+        max_rating_note: {$max: {
+            rating: "$imdb.rating",
+            title: "$title"
+        }},
+    }},
+    {$group: {
+        _id: "$_id.genre",
+        ratings: {
+            $addToSet: {
+                rated: "$_id.rated",
+                min_note: "$min_rating_note",
+                max_note: "$max_rating_note",
+            }
+        }
+    }},
+    {$project: {"ratings.min_note.rating": 0, "ratings.max_note.rating": 0}},
+    {$sort: {_id: 1}}
+]);
+
+db.video_movieDetails.aggregate([
+    {$sort: {"imdb.rating": 1}},
+    {$unwind: "$genres"},
+    {$group: {
+        "_id": {rated: "$rated", genre: "$genres"},
+        bestMovieTitle: {$last: '$title'},
+        bestMovieNote: {$last: '$imdb.rating'},
+        worstMovieTitle: {$first: '$title'},
+        worstMovieNote: {$first: '$imdb.rating'},
+        movies: {
+            $addToSet: '$title'
+        }
+    }},
+    {$group: {
+        "_id": "$_id.genre",
+        ratings: {
+            $addToSet: {
+                rating: "$_id.rated",
+                bestMovie: {
+                    title: "$bestMovieTitle",
+                    note: "$bestMovieNote",
+                },
+                worstMovie: {
+                    title: "$worstMovieTitle",
+                    note: "$worstMovieNote",
+                },
+                movies: "$movies"
+            }
+        }
+    }},
+    {$sort: {_id: 1}}
+]);

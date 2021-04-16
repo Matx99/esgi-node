@@ -55,3 +55,8 @@ function managedVersion(baseVersion) {
   if (options.patch) patch++;
   return [major, minor, patch].join(".");
 }
+
+// Stack d'appel
+//-> mangedVersion
+
+// EventLoop

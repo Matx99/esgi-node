@@ -1,0 +1,2 @@
+GET https://api.vetixy.com/animals
+Accept: application/ld+json

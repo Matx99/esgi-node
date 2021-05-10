@@ -9,5 +9,8 @@
   },
   "author": "",
   "license": "UNLICENSED",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "jsdom": "^16.5.3"
+  }
 }

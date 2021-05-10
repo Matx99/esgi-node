@@ -1,10 +1,12 @@
 // https://pokeapi.co/api/v2/pokemon?limit=151
+const http = require("http");
 const https = require("https");
 const fs = require("fs/promises");
 const { JSDOM } = require("jsdom");
 
 exports.Scrapper = function ({ url, ...options }, processData, saveData) {
-  const req = https.request(url, options, (res) => {
+  const protocol = url.startsWith("https") ? https : http;
+  const req = protocol.request(url, options, (res) => {
     if (res.statusCode >= 300) throw new Error("Something went wrong");
 
     let data = "";
@@ -32,4 +34,10 @@ exports.CSVGenerator = (data, file) => {
   const csvHeaders = Object.keys(data[0]).join(",");
   const csvValues = data.map((p) => Object.values(p).join(","));
   fs.writeFile(file, `${csvHeaders}\n${csvValues.join("\n")}`);
+};
+
+exports.MongooseGenerator = (data, model) => {
+  model
+    .insertMany(data)
+    .then(() => console.log("Data saved to " + model.collection.name));
 };

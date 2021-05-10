@@ -47,10 +47,10 @@ code,message,description
 422,Unprocessable entity,WebDAV : L’entité fournie avec la requête est incompréhensible ou incomplète.
 423,Locked,WebDAV : L’opération ne peut avoir lieu car la ressource est verrouillée.
 424,Method failure,WebDAV : Une méthode de la transaction a échoué.
-425,Too Early,RFC 8470[11] : Le serveur ne peut traiter la demande car elle risque d'être rejouée.
+425,Too Early,RFC 8470[11] : le serveur ne peut traiter la demande car elle risque d'être rejouée.
 426,Upgrade Required,RFC 2817[12] : Le client devrait changer de protocole, par exemple au profit de TLS/1.0.
 428,Precondition Required,RFC 6585[13] : La requête doit être conditionnelle.
-429,Too Many Requests,RFC 6585[14] : Le client a émis trop de requêtes dans un délai donné.
+429,Too Many Requests,RFC 6585[14] : le client a émis trop de requêtes dans un délai donné.
 431,Request Header Fields Too Large,RFC 6585[14] : Les entêtes HTTP émises dépassent la taille maximale admise par le serveur.
 449,Retry With,Code défini par Microsoft. La requête devrait être renvoyée après avoir effectué une action.
 450,Blocked by Windows Parental Controls,Code défini par Microsoft. Cette erreur est produite lorsque les outils de contrôle parental de Windows sont activés et bloquent l’accès à la page.

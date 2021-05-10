@@ -3,7 +3,7 @@ const fs = require("fs/promises");
 const { JSDOM } = require("jsdom");
 
 exports.Scrapper = function Scrapper(
-  { url, ...requestOptions },
+  { url, body, ...requestOptions },
   processData,
   saveData
 ) {
@@ -20,10 +20,16 @@ exports.Scrapper = function Scrapper(
       if (response.headers["content-type"].indexOf("json") !== -1) {
         data = JSON.parse(data);
       }
-      if (response.headers["content-type"].indexOf("image") !== -1) {
+      else if (response.headers["content-type"].indexOf("image") !== -1) {
         //data = data;
       }
-      if (response.headers["content-type"].indexOf("html") !== -1) {
+      else if (response.headers["content-type"].indexOf("html") !== -1) {
+        console.log(data.toString());
+        const dom = new JSDOM(data.toString());
+        data = dom.window.document;
+      }
+      else if (response.headers["content-type"].indexOf("xml") !== -1) {
+        console.log(data.toString());
         const dom = new JSDOM(data.toString());
         data = dom.window.document;
       }
@@ -34,7 +40,12 @@ exports.Scrapper = function Scrapper(
     });
   });
 
-  this.scrap = () => request.end();
+  this.scrap = () => {
+    if (body) {
+      request.write(body);
+    }
+    request.end();
+  };
 };
 
 exports.CSVGenerator = (data, filename) => {

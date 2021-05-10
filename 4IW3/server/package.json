@@ -5,13 +5,18 @@
   "main": "server.js",
   "private": true,
   "scripts": {
+    "watch": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
     "command-line-args": "^5.1.1",
+    "express": "^4.17.1",
     "jsdom": "^16.5.3",
     "mongoose": "^5.12.7"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
   }
 }

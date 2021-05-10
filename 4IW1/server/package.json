@@ -8,5 +8,8 @@
     "toto": "echo test"
   },
   "author": "",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "jsdom": "^16.5.3"
+  }
 }

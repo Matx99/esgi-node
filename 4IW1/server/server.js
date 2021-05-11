@@ -1,56 +1,32 @@
-const fs = require("fs/promises");
-const {
-  constants: { R_OK },
-} = require("fs");
-const backup = require("./backup.json");
+const Weather = require("./models/mongo/Weather");
 
-const file_path = "./access.log";
-
-//fs.access(file_path, R_OK)
-//  .then((_) => fs.readFile(file_path))
-//  .then((e) => {
-//    const lines = e.toString().split("\n");
-//    let count = 0;
-//    lines.forEach((l) => {
-//      const parsedLine = parseLine(l);
-//      backupLine(parsedLine).then((_) => {
-//        if (++count === lines.length) {
-//          fs.writeFile("./backup.json", JSON.stringify(backup));
-//        }
-//      });
-//    });
-//  })
-//  .catch((e) => console.error(e));
-// <==>
-fs.access(file_path, R_OK)
-  .then((_) => fs.readFile(file_path))
-  .then((e) => {
-    const lines = e.toString().split("\n");
-    return Promise.all(
-      lines.map((l) => {
-        const parsedLine = parseLine(l);
-        return backupLine(parsedLine);
-      })
-    );
-  })
-  .then(
-    (_) =>
-      console.log(_) || fs.writeFile("./backup.json", JSON.stringify(backup))
+new Weather({
+  datetime: "2020-03-04",
+  tempmax: 25,
+  tempmin: 14,
+  description: "Confinement 2",
+})
+  .save()
+  .then((data) => console.log(data))
+  .then((_) =>
+    Weather.aggregate([
+      {
+        $group: {
+          _id: { date: "$datetime", desc: "$description" },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.date",
+          items: {
+            $addToSet: {
+              desc: "$_id.desc",
+              count: "$count",
+            },
+          },
+        },
+      },
+    ])
   )
-  .catch((e) => console.error(e));
-
-function parseLine(line) {
-  const [, date, app, log] = line.match(/(\d{4}-\d{2}-\d{2}) (\w+) (.*)/);
-  return {
-    date,
-    app,
-    log,
-  };
-}
-
-async function backupLine(line) {
-  backup[line.app] ??= {};
-  // <=> backup[line.app] = backup[line.app] ?? {};
-  backup[line.app][line.date] ??= [];
-  backup[line.app][line.date].push(line.log);
-}
+  .then((data) => console.log(data));

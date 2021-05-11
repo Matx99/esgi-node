@@ -1,4 +1,5 @@
-const { Scrapper, CSVGenerator } = require("./scrapper");
+const Weather = require("./models/mongo/Weather");
+const { Scrapper, MongooseGenerator } = require("./scrapper");
 
 new Scrapper(
   {
@@ -12,5 +13,5 @@ new Scrapper(
       tempmin,
       description,
     })),
-  (data) => CSVGenerator(data, "./weather.csv")
+  (data) => MongooseGenerator(data, Weather)
 ).scrap();

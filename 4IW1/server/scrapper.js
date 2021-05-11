@@ -1,4 +1,6 @@
 const https = require("https");
+const http = require("http");
+const querystring = require("querystring");
 const fs = require("fs/promises");
 const { JSDOM } = require("jsdom");
 
@@ -7,7 +9,20 @@ exports.Scrapper = function Scrapper(
   processData,
   saveData
 ) {
-  const request = https.request(url, requestOptions, (response) => {
+  let postData = body;
+  if (body) {
+    requestOptions.headers["Content-Type"] ??=
+      "application/x-www-form-urlencoded";
+    if (
+      requestOptions.headers["Content-Type"] ===
+      "application/x-www-form-urlencoded"
+    ) {
+      postData = querystring.stringify(body);
+      requestOptions.headers["Content-Length"] ??= Buffer.byteLength(postData);
+    }
+  }
+  const protocol = url.startsWith("https") ? https : http;
+  const request = protocol.request(url, requestOptions, (response) => {
     let data = [];
     response.on("data", (chunk) => data.push(chunk));
 
@@ -19,17 +34,12 @@ exports.Scrapper = function Scrapper(
       // Parse message
       if (response.headers["content-type"].indexOf("json") !== -1) {
         data = JSON.parse(data);
-      }
-      else if (response.headers["content-type"].indexOf("image") !== -1) {
+      } else if (response.headers["content-type"].indexOf("image") !== -1) {
         //data = data;
-      }
-      else if (response.headers["content-type"].indexOf("html") !== -1) {
-        console.log(data.toString());
+      } else if (response.headers["content-type"].indexOf("html") !== -1) {
         const dom = new JSDOM(data.toString());
         data = dom.window.document;
-      }
-      else if (response.headers["content-type"].indexOf("xml") !== -1) {
-        console.log(data.toString());
+      } else if (response.headers["content-type"].indexOf("xml") !== -1) {
         const dom = new JSDOM(data.toString());
         data = dom.window.document;
       }
@@ -41,8 +51,8 @@ exports.Scrapper = function Scrapper(
   });
 
   this.scrap = () => {
-    if (body) {
-      request.write(body);
+    if (postData) {
+      request.write(postData);
     }
     request.end();
   };
@@ -58,4 +68,12 @@ exports.CSVGenerator = (data, filename) => {
 
 exports.FileGenerator = (data, filename) => {
   fs.writeFile(filename, data).then((_) => console.log("Data saved"));
+};
+
+exports.MongooseGenerator = (data, model) => {
+  model
+    .insertMany(data)
+    .then(() =>
+      console.log("Data saved into collection " + model.collection.name)
+    );
 };

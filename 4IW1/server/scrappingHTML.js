@@ -1,4 +1,5 @@
-const { Scrapper, CSVGenerator } = require("./scrapper");
+const HttpCode = require("./models/mongo/HttpCode");
+const { Scrapper, MongooseGenerator } = require("./scrapper");
 
 new Scrapper(
   { url: "https://fr.wikipedia.org/wiki/Liste_des_codes_HTTP" },
@@ -13,5 +14,14 @@ new Scrapper(
         };
       }
     ),
-  (data) => CSVGenerator(data, "./http_code.csv")
+  (data) => MongooseGenerator(data, HttpCode)
+  //(data) => CSVGenerator(data, "./http_code.csv")
 ).scrap();
+
+HttpCode.create({
+  code: 603,
+  message: "TTest",
+  description: "Test",
+})
+  .then((data) => console.log(data))
+  .catch((e) => console.error(e));
